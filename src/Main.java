@@ -16,6 +16,7 @@ public class Main {
             checkouts.put(i, new Caja(i));
         }
 
+        //Definir los carritos de compra
         for(int i = 1; i <= 25; i++) {
             shoppingCarts.put(i, new CarritoCompras(i));
         }
@@ -38,10 +39,13 @@ public class Main {
                 System.out.println("No se han encontrado carritos disponibles!, se le agregara a la cola de espera");
             }
 
+            //Definir el tiempo para la llegada de los clientes
         }, 1, 15, TimeUnit.SECONDS);
 
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
             updateClients();
+
+            //Asignacion de carritos y/o cajas
         }, 1, 5, TimeUnit.SECONDS);
     }
 
