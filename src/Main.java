@@ -31,7 +31,7 @@ public class Main {
 
             if(assignCart(client)) {
                 shoppingClients.add(client);
-                client.setShoppingTime(nombresAleatorios.number(3));
+                client.setShoppingTime(nombresAleatorios.number(1));
                 System.out.println("Se le ha asignado el carrito " + client.getShoppingCartId());
                 System.out.println("-------------------------------------");
             } else {
@@ -40,13 +40,42 @@ public class Main {
             }
 
             //Definir el tiempo para la llegada de los clientes
-        }, 1, 15, TimeUnit.SECONDS);
+        }, 1, 5, TimeUnit.SECONDS);
 
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
             updateClients();
 
             //Asignacion de carritos y/o cajas
-        }, 1, 5, TimeUnit.SECONDS);
+        }, 1, 10, TimeUnit.SECONDS);
+
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
+            updateCheckouts();
+
+            //Asignacion de carritos y/o cajas
+        }, 1, 20 , TimeUnit.SECONDS);
+    }
+
+
+    private void updateCheckouts() {
+        for (Caja checkout : checkouts.values()) {
+            Cliente currentClient = checkout.getClient();
+            if(currentClient != null) {
+                checkout.setClient(null);
+                checkoutClients.remove(currentClient);
+                System.out.println("El cliente " + currentClient.getName() + " ha finalizado su compra!");
+            }
+
+            try {
+                Cliente newClient = checkout.getClientQueue().get(0);
+                if(newClient != null) {
+                    checkout.setClient(newClient);
+                    checkout.getClientQueue().remove(newClient);
+                    System.out.println("El cliente " + newClient.getName() + " está pagando sus productos");
+                }
+            } catch (IndexOutOfBoundsException e) {
+            }
+
+        }
     }
 
     private void updateClients() {
@@ -71,16 +100,12 @@ public class Main {
         }
 
         for (Cliente shoppingClient : shoppingClients) {
-            if(shoppingClient.getShoppingCurrentTime() < shoppingClient.getShoppingTime()) {
-                shoppingClient.addShopingCurrentTime();
-            } else {
                 shoppingCarts.get(shoppingClient.getShoppingCartId()).setClient(null);
                 shoppingClient.setShoppingCartId(0);
                 shoppingClients.remove(shoppingClient);
                 checkoutClients.add(shoppingClient);
                 assignCheckout(shoppingClient);
                 System.out.println("El cliente " + shoppingClient.getName() + " ha terminado de elegir sus productos y se le asigno la caja " +  shoppingClient.getCheckoutId());
-            }
         }
 
 
