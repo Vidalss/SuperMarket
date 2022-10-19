@@ -9,7 +9,6 @@ public class Main {
 
     private final List<Cliente> waitingClients = new LinkedList<>();
     private final List<Cliente> shoppingClients = new LinkedList<>();
-    private final List<Cliente> checkoutClients = new LinkedList<>();
 
     public Main() {
         for(int i = 1; i <= 3; i++) {
@@ -40,19 +39,15 @@ public class Main {
             }
 
             //Definir el tiempo para la llegada de los clientes
-        }, 1, 5, TimeUnit.SECONDS);
+        }, 5, 5, TimeUnit.SECONDS);
 
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
-            updateClients();
+        //Asignacion de carritos y/o cajas
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(this::updateWaitingClients, 10, 10, TimeUnit.SECONDS);
+        //Asignacion de carritos y/o cajas
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(this::updateShoppingClients, 8, 8, TimeUnit.SECONDS);
 
-            //Asignacion de carritos y/o cajas
-        }, 1, 10, TimeUnit.SECONDS);
-
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
-            updateCheckouts();
-
-            //Asignacion de carritos y/o cajas
-        }, 1, 20 , TimeUnit.SECONDS);
+        //Asignacion de carritos y/o cajas
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(this::updateCheckouts, 40, 40 , TimeUnit.SECONDS);
     }
 
 
@@ -61,7 +56,6 @@ public class Main {
             Cliente currentClient = checkout.getClient();
             if(currentClient != null) {
                 checkout.setClient(null);
-                checkoutClients.remove(currentClient);
                 System.out.println("El cliente " + currentClient.getName() + " ha finalizado su compra!");
             }
 
@@ -78,37 +72,18 @@ public class Main {
         }
     }
 
-    private void updateClients() {
-        for (Caja checkout : checkouts.values()) {
-            Cliente currentClient = checkout.getClient();
-            if(currentClient != null) {
-                checkout.setClient(null);
-                checkoutClients.remove(currentClient);
-                System.out.println("El cliente " + currentClient.getName() + " ha finalizado su compra!");
-            }
-
-            try {
-                Cliente newClient = checkout.getClientQueue().get(0);
-                if(newClient != null) {
-                    checkout.setClient(newClient);
-                    checkout.getClientQueue().remove(newClient);
-                    System.out.println("El cliente " + newClient.getName() + " está pagando sus productos");
-                }
-            } catch (IndexOutOfBoundsException e) {
-            }
-
-        }
-
+    private void updateShoppingClients() {
         for (Cliente shoppingClient : shoppingClients) {
-                shoppingCarts.get(shoppingClient.getShoppingCartId()).setClient(null);
-                shoppingClient.setShoppingCartId(0);
-                shoppingClients.remove(shoppingClient);
-                checkoutClients.add(shoppingClient);
-                assignCheckout(shoppingClient);
-                System.out.println("El cliente " + shoppingClient.getName() + " ha terminado de elegir sus productos y se le asigno la caja " +  shoppingClient.getCheckoutId());
+            shoppingCarts.get(shoppingClient.getShoppingCartId()).setClient(null);
+            shoppingClient.setShoppingCartId(0);
+            shoppingClients.remove(shoppingClient);
+            assignCheckout(shoppingClient);
+            System.out.println("El cliente " + shoppingClient.getName() + " ha terminado de elegir sus productos y se le asigno la caja " +  shoppingClient.getCheckoutId());
         }
+    }
 
 
+    private void updateWaitingClients() {
         for (Cliente waitingClient : waitingClients) {
             if(assignCart(waitingClient)) {
                 shoppingClients.add(waitingClient);
